@@ -73,7 +73,7 @@ export default function MainPage() {
         }
   
         try {
-          const response = await fetch(`http://192.168.100.127:3000/marker/getMarker/${username}`);
+          const response = await fetch(`http://db-production-c620.up.railway.app/marker/getMarker/${username}`);
           const data = await response.json();
           console.log(data)
           if (Array.isArray(data)) setMarkers(data);
@@ -83,13 +83,13 @@ export default function MainPage() {
         }
   
         try {
-          const checkResponse = await axios.get(`http://192.168.100.127:3000/marker/checkMarkerTitleExists`, {
+          const checkResponse = await axios.get(`http://db-production-c620.up.railway.app/marker/checkMarkerTitleExists`, {
             params: { title: username },
           });
   
           if (checkResponse.status === 200 && checkResponse.data?.data) {
             try {
-              const updateResponse = await axios.put(`http://192.168.100.127:3000/marker/updateMarker/${username}`, {
+              const updateResponse = await axios.put(`http://db-production-c620.up.railway.app/marker/updateMarker/${username}`, {
                 newLatitude: latitude,
                 newLongitude: longitude,
               });
@@ -108,7 +108,7 @@ export default function MainPage() {
                 UserID: userId,
               });
   
-              const createResponse = await axios.post(`http://192.168.100.127:3000/marker/${username}/submitMarkerSP`, {
+              const createResponse = await axios.post(`http://db-production-c620.up.railway.app/marker/${username}/submitMarkerSP`, {
                 lat,
                 long,
                 description: 'test',
@@ -145,7 +145,7 @@ export default function MainPage() {
 
      const finalMessage = `The Service Provided is ${serviceProvided}. The name of the person in need is ${nameInNeed}. ${message}`
 
-     const messageSubmitResponse = await axios.post("http://192.168.100.127:3000/messaging/submit", {
+     const messageSubmitResponse = await axios.post("http://db-production-c620.up.railway.app/messaging/submit", {
         message: finalMessage
       }, {
         headers: {
