@@ -35,7 +35,7 @@ export default function useHandleClicks(){
               return;
           }
 
-          const response = await axios.get('http://192.168.100.127:3000/serviceprovider/getServiceProvider', {
+          const response = await axios.get('http://db-production-c620.up.railway.app/serviceprovider/getServiceProvider', {
               params: {
                   username: uname,
                   password: password,
