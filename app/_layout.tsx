@@ -1,20 +1,17 @@
-import { Stack, Tabs } from 'expo-router';
-import React from 'react';
-import { DarkTheme, DefaultTheme, ThemeProvider, NavigationContainer } from '@react-navigation/native';
-import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import { Colors } from '@/constants/Colors';
+import { ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme } from '@react-navigation/native';
+import { Stack } from 'expo-router';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-export default function TabLayout() {
+export default function Layout() {
   const colorScheme = useColorScheme();
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack initialRouteName="Welcome">
-        <Stack.Screen name="MainPage" options={{headerShown: false}} />
-
-        <Stack.Screen name="index" options={{headerShown: false}} />
-        <Stack.Screen name="+not-found" options={{headerShown: false}}/>
+        <Stack.Screen name="MainPage" options={{ headerShown: false }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="not-found" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );

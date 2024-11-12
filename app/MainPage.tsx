@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { StyleSheet, View, Text, TouchableOpacity, Image, ActivityIndicator, Pressable, Modal, TextInput } from 'react-native';
 import { useNavigation } from 'expo-router';
-import useLocation from '../hooks/useLocation'
+import useLocation from '../hooks/useLocation';
 import useHandleLogin from '@/hooks/useHandleLogin';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,245 +10,153 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 interface MarkerType {
   latitude: number;
   longitude: number;
-  title: string;  // Add the title field
+  title: string;
 }
 
+const markerImages: { [key: string]: any } = {
+  "BFP Assistance Request": require('../assets/images/fire.png'),
+  "PNP Assistance Request": require('../assets/images/police.webp'),
+  "Medical Assistance Request": require('../assets/images/medic.png'),
+  "NDRRMC Assistance Request": require('../assets/images/ndrrmc.png'),
+  "PDRRMO Assistance Request": require('../assets/images/ndrrmc.png'),
+};
+
 const getMarkerImage = (title: string) => {
-  switch (title) {
-    case 'BFP Assistance Request':
-      return require('../assets/images/fire.png');
-    case 'PNP Assistance Request':
-      return require('../assets/images/police.webp');
-    case 'Medical Assistance Request':
-      return require('../assets/images/medic.png');
-    case 'NDRRMC Assistance Request':
-      return require('../assets/images/ndrrmc.png');
-    case 'PDRRMO Assistance Request':
-      return require('../assets/images/ndrrmc.png');
-  }
+  return markerImages[title]; // Fallback to default
 };
 
 export default function MainPage() {
-
-  const [serviceProviderMarkerImage,setServiceProviderMarkerImage] = useState<any>(null)
-  const [markers, setMarkers] = useState<MarkerType[]>([]); // State to store markers with proper type
+  const [markers, setMarkers] = useState<MarkerType[]>([]);
   const [isPressed, setIsPressed] = useState<boolean>(false);
-  const [canSelectLocation, setCanSelectLocation] = useState<any>();
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
 
-  const { location, errorMsg, isFetching, latitude, longitude, title } = useLocation();  // Get location data from useLocation
-  const { markerUnameEmoji, markerEmoji, markerImageSize, imageChanger,uname } = useHandleLogin();
+  const [serviceProvided, setServiceProvided] = useState<string | null>();
+  const [nameInNeed, setNameInNeed] = useState<string | null>();
+  const [message, setMessage] = useState<string | null>('');
+  const [messageError, setMessageError] = useState<string | null>();
 
-
-  const [modalVisible,setModalVisible] = useState<boolean>(false)
-
-  const [serviceProvided,setServiceProvided] = useState<string | null>()
-  const [nameInNeed,setNameInNeed] = useState<string | null>()
-  const [message,setMessage] = useState<string | null>('')
-
-
-  const [messageError,setMessageError] = useState<string | null>()
-  
+  const { location, errorMsg, isFetching, latitude, longitude, title } = useLocation();
+  const { markerUnameEmoji, markerImageSize } = useHandleLogin();
 
   const defaultRegion = {
-    latitude: 15.4817, // Tarlac City latitude
-    longitude: 120.5979, // Tarlac City longitude
-    latitudeDelta: 0.05, // Adjust for desired zoom level
+    latitude: 15.4817,
+    longitude: 120.5979,
+    latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   };
 
-  useEffect(() => {
+  async function handleSendMessage() {
+    try {
+      if (!serviceProvided || !nameInNeed || !message) {
+        setMessageError('Fill up the requirements');
+        return;
+      }
+      const finalMessage = `The Service Provided is ${serviceProvided}. The name of the person in need is ${nameInNeed}. ${message}`;
+      await axios.post("https://fearless-growth-production.up.railway.app/messaging/submit", {
+        message: finalMessage
+      }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      setModalVisible(false);
+      setMessageError(null);
+    } catch (err: any) {
+      console.error('Error sending message:', err.message);
+    }
+  }
+
     const fetchAndUpdateMarker = async () => {
       try {
         const username = await AsyncStorage.getItem('usernameSP');
-        const userId = await AsyncStorage.getItem('userId')
-        const lat = await latitude;
-        const long = await longitude;
-
-
-        console.log('Username:', username);
-  
-        if (!username) {
-          console.error('Username not found in AsyncStorage');
-          return;
-        }
-  
-        try {
-          const response = await fetch(`https://fearless-growth-production.up.railway.app/marker/getMarker/${username}`);
-          const data = await response.json();
-          console.log(data)
-          if (Array.isArray(data)) setMarkers(data);
-
-        } catch (fetchError: any) {
-          console.error('Error fetching markers:', fetchError.message);
-        }
-  
+        const userId = await AsyncStorage.getItem('userId');
+    
+        if (!username || latitude === null || longitude === null) return;
+    
+        const response = await fetch(`https://fearless-growth-production.up.railway.app/marker/getMarker/${username}`);
+        const data = await response.json();
+        if (Array.isArray(data)) setMarkers(data);
+    
         try {
           const checkResponse = await axios.get(`https://fearless-growth-production.up.railway.app/marker/checkMarkerTitleExists`, {
             params: { title: username },
           });
-  
+    
           if (checkResponse.status === 200 && checkResponse.data?.data) {
-            try {
-              const updateResponse = await axios.put(`https://fearless-growth-production.up.railway.app/marker/updateMarker/${username}`, {
-                newLatitude: latitude,
-                newLongitude: longitude,
-              });
-              console.log(updateResponse.status === 200 ? 'Marker updated successfully' : 'Marker update failed');
-            } catch (updateError: any) {
-              console.error('Error updating marker:', updateError.message);
-            }
+            await axios.put(`https://fearless-growth-production.up.railway.app/marker/updateMarker/${username}`, {
+              newLatitude: latitude,
+              newLongitude: longitude,
+            });
           }
-        } catch (checkError: any) {
-          if (checkError.response?.status === 404) {
-            try {
-              console.log("Attempting to create marker with:", {
-                lat,
-                long,
-                description: 'test',
-                UserID: userId,
-              });
-  
-              const createResponse = await axios.post(`https://fearless-growth-production.up.railway.app/marker/${username}/submitMarkerSP`, {
-                lat,
-                long,
-                description: 'test',
-                UserID: userId,
-                title: username  
-              });
-              
-  
-              console.log(createResponse.status === 201 ? 'Marker created successfully' : 'Marker creation failed');
-            } catch (createError: any) {
-              console.error('Error creating marker:', createError.message);
-            }
+        } catch (error: any) {
+          // Handle 404 error from `checkMarkerTitleExists` here
+          if (axios.isAxiosError(error) && error.response?.status === 404) {
+            await axios.post(`https://fearless-growth-production.up.railway.app/marker/${username}/submitMarkerSP`, {
+              lat: latitude,
+              long: longitude,
+              description: 'test',
+              UserID: userId,
+              title: username
+            });
           } else {
-            console.error('Error checking marker existence:', checkError.message);
+            console.error('Error in checkMarkerTitleExists:', error.message);
           }
         }
       } catch (error: any) {
         console.error('Unexpected error in fetchAndUpdateMarker:', error.message);
       }
     };
-  
-    const intervalId = setInterval(fetchAndUpdateMarker, 3000);
-    return () => clearInterval(intervalId);
-  }, [latitude, longitude]);
+    
+    useEffect(() => {
+      // Set an interval to periodically call fetchAndUpdateMarker every 3 seconds
+      const intervalId = setInterval(fetchAndUpdateMarker, 3000);
+    
+      // Clean up interval on component unmount
+      return () => clearInterval(intervalId);
+    }, [latitude, longitude]);
 
-  // done
-  async function handleSendMessage(){
-    try{
-     
-     if(!serviceProvided && !nameInNeed && !message){
-        setMessageError('Fill up the requirements')
-        return;
-     }
-
-     const finalMessage = `The Service Provided is ${serviceProvided}. The name of the person in need is ${nameInNeed}. ${message}`
-
-     const messageSubmitResponse = await axios.post("https://fearless-growth-production.up.railway.app/messaging/submit", {
-        message: finalMessage
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }); 
-
-      setModalVisible(!modalVisible)
-      setMessageError(null)
-
-
-      
-    }catch(err: any){
-      console.log(err)
-    }
-  }
-
-
-  
-
-  useEffect(() => {
-    const updateMarkerEmoji = async () => {
-      const result = await imageChanger();
-      console.log("Updated marker emoji:", result); // Debugging output
-    };
-  
-    updateMarkerEmoji();  
-  }, [latitude, longitude, title]); 
-  
-  
 
   useEffect(() => {
     if (latitude && longitude && title) {
       setMarkers((prevMarkers) => [
         ...prevMarkers,
-        { latitude, longitude, title },  
+        { latitude, longitude, title },
       ]);
     }
-  }, [latitude, longitude, title]); 
-
-
-
+  }, [latitude, longitude, title]);
 
   return (
     <View style={styles.container}>
-
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={modalVisible}
-      onRequestClose={() => {
-        setModalVisible(!modalVisible);
-      }}
-    >
-      <View style={modalStyles.modalBackground}>
-        <View style={modalStyles.modalView}>
-          <Text style={modalStyles.label}>Name of the person in need</Text>
-          <TextInput
-            style={modalStyles.input}
-            onChangeText={(e) => setNameInNeed(e)}
-            maxLength={30}
-          />
-
-          <Text style={modalStyles.label}>Service Provided</Text>
-          <TextInput
-            style={modalStyles.input}
-            onChangeText={(e) => setServiceProvided(e)}
-            maxLength={6}
-          />
-
-          <Text style={modalStyles.label}>Message (include time and date)</Text>
-          <TextInput
-            style={[modalStyles.input, modalStyles.textArea]}
-            onChangeText={(e) => setMessage(e)}
-            multiline={true}
-            maxLength={100}
-          />
-
-          {messageError && <Text style={modalStyles.errorText}>{messageError}</Text>}
-
-          <View style={modalStyles.buttonContainer}>
-            <Pressable
-              style={modalStyles.button}
-              onPress={() => handleSendMessage()}
-            >
-              <Text style={modalStyles.buttonText}>Send</Text>
-            </Pressable>
-
-            <Pressable
-              style={modalStyles.button}
-              onPress={() => setModalVisible(!modalVisible)}
-            >
-              <Text style={modalStyles.buttonText}>Close</Text>
-            </Pressable>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={modalStyles.modalBackground}>
+          <View style={modalStyles.modalView}>
+            <Text style={modalStyles.label}>Name of the person in need</Text>
+            <TextInput style={modalStyles.input} onChangeText={setNameInNeed} maxLength={30} />
+            <Text style={modalStyles.label}>Service Provided</Text>
+            <TextInput style={modalStyles.input} onChangeText={setServiceProvided} maxLength={6} />
+            <Text style={modalStyles.label}>Message (include time and date)</Text>
+            <TextInput style={[modalStyles.input, modalStyles.textArea]} onChangeText={setMessage} multiline={true} maxLength={100} />
+            {messageError && <Text style={modalStyles.errorText}>{messageError}</Text>}
+            <View style={modalStyles.buttonContainer}>
+              <Pressable style={modalStyles.button} onPress={handleSendMessage}>
+                <Text style={modalStyles.buttonText}>Send</Text>
+              </Pressable>
+              <Pressable style={modalStyles.button} onPress={() => setModalVisible(false)}>
+                <Text style={modalStyles.buttonText}>Close</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
 
       {isFetching && <Text>Fetching location...</Text>}
       {errorMsg && <Text>{errorMsg}</Text>}
       {!isFetching && location && (
         <MapView
+          provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={defaultRegion}
           region={{
@@ -258,39 +166,19 @@ export default function MainPage() {
             longitudeDelta: 0.05,
           }}
         >
-          <Marker
-            coordinate={{
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            }}
-            title="You are here"
-            description="Your current location"
-          >
-            <Image
-              source={markerUnameEmoji}
-              style={{ width: markerImageSize.width, height: markerImageSize.height }}
-            />
+          <Marker coordinate={{ latitude: location.coords.latitude, longitude: location.coords.longitude }} title="You are here" description="Your current location">
+            <Image source={markerUnameEmoji} style={{ width: markerImageSize.width, height: markerImageSize.height }} />
           </Marker>
-          {markers.map((marker, index) => {
-              console.log("Rendering marker with title:", marker.title); 
-              return (
-                <Marker
-                  key={index}
-                  coordinate={{
-                    latitude: marker.latitude,
-                    longitude: marker.longitude,
-                  }}
-                  title={marker.title} 
-                  description={`Latitude: ${marker.latitude}, Longitude: ${marker.longitude}`}
-                >
-                  <Image
-                    source={getMarkerImage(marker.title)} 
-                    style={{ width: 45, height: 45 }}  
-                  />
-                </Marker>
-              );
-            })}
-
+          {markers.map((marker, index) => (
+            <Marker
+              key={index}
+              coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
+              title={marker.title}
+              description={`Latitude: ${marker.latitude}, Longitude: ${marker.longitude}`}
+            >
+              <Image source={getMarkerImage(marker.title)} style={{ width: 45, height: 45 }} />
+            </Marker>
+          ))}
         </MapView>
       )}
 
@@ -299,7 +187,7 @@ export default function MainPage() {
           <View style={styles.buttonsContainer}>
             <TouchableOpacity
               style={[styles.button, isPressed ? styles.buttonPressed : null]}
-              onPress={() => setModalVisible(!modalVisible)}
+              onPress={() => setModalVisible(true)}
             >
               <Text style={styles.buttonText}>Send Updates</Text>
             </TouchableOpacity>
@@ -309,6 +197,8 @@ export default function MainPage() {
     </View>
   );
 }
+
+
 
 
 const styles = StyleSheet.create({
