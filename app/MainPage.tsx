@@ -108,7 +108,7 @@ export default function MainPage() {
     useEffect(() => {
       // Set an interval to periodically call fetchAndUpdateMarker every 3 seconds
       const intervalId = setInterval(fetchAndUpdateMarker, 3000);
-    
+      
       // Clean up interval on component unmount
       return () => clearInterval(intervalId);
     }, [latitude, longitude]);
@@ -136,7 +136,7 @@ export default function MainPage() {
             <Text style={modalStyles.label}>Name of the person in need</Text>
             <TextInput style={modalStyles.input} onChangeText={setNameInNeed} maxLength={30} />
             <Text style={modalStyles.label}>Service Provided</Text>
-            <TextInput style={modalStyles.input} onChangeText={setServiceProvided} maxLength={6} />
+            <TextInput style={modalStyles.input} onChangeText={setServiceProvided} maxLength={10} />
             <Text style={modalStyles.label}>Message (include time and date)</Text>
             <TextInput style={[modalStyles.input, modalStyles.textArea]} onChangeText={setMessage} multiline={true} maxLength={100} />
             {messageError && <Text style={modalStyles.errorText}>{messageError}</Text>}

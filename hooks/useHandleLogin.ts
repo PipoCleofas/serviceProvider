@@ -4,7 +4,7 @@ import axios from "axios";
 import useLocation from './useLocation';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
-export default function useHandleClicks(){
+export default function useHandleLogin(){
     const [loginError, setLoginError] = useState<string | null>(null)
     let [uname,setUname] = useState<null | string>(null);
     let [password,setPassword] = useState<null | string>(null);

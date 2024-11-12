@@ -4,7 +4,7 @@ import { SimpleLineIcons } from "@expo/vector-icons";
 import { Feather } from '@expo/vector-icons'; // Import Feather icons
 import  useHandleLogin from '../hooks/useHandleLogin'
 
-export default function CitizenLogin() {
+export default function Index() {
 
     const { onPasswordChange, onLoginPress, onUnameChange, loginError } = useHandleLogin();
 
