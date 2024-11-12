@@ -12,9 +12,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -37,7 +34,11 @@
       "router": {
         "origin": false
       },
-      "googleMapsApiKey": "AIzaSyA598JrOvVsYPrClcB9vEEnB5z6_a-70Po"
-    }
+      "googleMapsApiKey": "AIzaSyA598JrOvVsYPrClcB9vEEnB5z6_a-70Po",
+      "eas": {
+        "projectId": "cb82c867-c2ef-4863-b526-249a862551ea"
+      }
+    },
+    "sdkVersion": "53.0.0"  
   }
 }
