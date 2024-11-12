@@ -152,7 +152,7 @@ export default function MainPage() {
         </View>
       </Modal>
 
-      {isFetching && <Text>Fetching location...</Text>}
+      {!isFetching && location && location.coords && <Text>Fetching location...</Text>}
       {errorMsg && <Text>{errorMsg}</Text>}
       {!isFetching && location && (
         <MapView
@@ -170,14 +170,16 @@ export default function MainPage() {
             <Image source={markerUnameEmoji} style={{ width: markerImageSize.width, height: markerImageSize.height }} />
           </Marker>
           {markers.map((marker, index) => (
-            <Marker
-              key={index}
-              coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
-              title={marker.title}
-              description={`Latitude: ${marker.latitude}, Longitude: ${marker.longitude}`}
-            >
-              <Image source={getMarkerImage(marker.title)} style={{ width: 45, height: 45 }} />
-            </Marker>
+            marker.latitude && marker.longitude ? (
+              <Marker
+                key={index}
+                coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
+                title={marker.title || "No Title"}
+                description={`Latitude: ${marker.latitude}, Longitude: ${marker.longitude}`}
+              >
+                <Image source={getMarkerImage(marker.title)} style={{ width: 45, height: 45 }} />
+              </Marker>
+            ) : null
           ))}
         </MapView>
       )}
