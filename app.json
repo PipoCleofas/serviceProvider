@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.pipsjacob.app2"
     },
     "web": {
       "bundler": "metro",
@@ -31,6 +32,15 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "f13672a2-25dd-4a2e-a674-f55ffa8171dc"
+      },
+      "googleMapsApiKey": "AIzaSyA598JrOvVsYPrClcB9vEEnB5z6_a-70Po"
     }
   }
 }
