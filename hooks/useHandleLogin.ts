@@ -51,6 +51,9 @@ export default function useHandleLogin(){
                 await AsyncStorage.setItem('usernameSP', uname as string);
                 await AsyncStorage.setItem('userId', userId.toString());
                 console.log('Username and User ID stored in AsyncStorage:', uname, userId);
+
+                await imageChanger();
+
                 
                 navigation.navigate('MainPage' as never);
             } else {

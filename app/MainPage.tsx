@@ -14,6 +14,11 @@ interface MarkerType {
 }
 
 const markerImages: { [key: string]: any } = {
+  "BFP": require('../assets/images/fire.png'),
+  "PNP": require('../assets/images/police.webp'),
+  "Medical": require('../assets/images/medic.png'),
+  "NDRRMC": require('../assets/images/ndrrmc.png'),
+  "PDRRMO": require('../assets/images/ndrrmc.png'),
   "BFP Assistance Request": require('../assets/images/fire.png'),
   "PNP Assistance Request": require('../assets/images/police.webp'),
   "Medical Assistance Request": require('../assets/images/medic.png'),
@@ -36,7 +41,7 @@ export default function MainPage() {
   const [messageError, setMessageError] = useState<string | null>();
 
   const { location, errorMsg, isFetching, latitude, longitude, title } = useLocation();
-  const { markerUnameEmoji, markerImageSize } = useHandleLogin();
+  const { markerUnameEmoji, markerImageSize, imageChanger } = useHandleLogin();
 
   const defaultRegion = {
     latitude: 15.4817,
@@ -108,7 +113,7 @@ export default function MainPage() {
     useEffect(() => {
       // Set an interval to periodically call fetchAndUpdateMarker every 3 seconds
       const intervalId = setInterval(fetchAndUpdateMarker, 3000);
-      
+      imageChanger()
       // Clean up interval on component unmount
       return () => clearInterval(intervalId);
     }, [latitude, longitude]);

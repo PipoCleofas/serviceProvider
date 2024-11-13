@@ -15,16 +15,27 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to show your position on the map."
+        "NSLocationWhenInUseUsageDescription": "We need your location to show it on the map",
+        "NSLocationAlwaysUsageDescription": "We need your location to show it on the map",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to show it on the map",
+        "UIBackgroundModes": ["location"]
       }
     },
     "android": {
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyA598JrOvVsYPrClcB9vEEnB5z6_a-70Po"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.pipsjacob.app2",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "package": "com.pipsjacob.app2"
     },
     "web": {
       "bundler": "metro",
@@ -36,9 +47,6 @@
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "googleMaps": {
-      "apiKey": "AIzaSyA598JrOvVsYPrClcB9vEEnB5z6_a-70Po"
     },
     "extra": {
       "router": {
