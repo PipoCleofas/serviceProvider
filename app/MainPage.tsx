@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { StyleSheet, View, Text, TouchableOpacity, Image, ActivityIndicator, Pressable, Modal, TextInput } from 'react-native';
 import { useNavigation } from 'expo-router';
-import useLocation from '../hooks/useLocation';
 import useHandleLogin from '@/hooks/useHandleLogin';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Notification from '@/components/Notification';
 
 interface MarkerType {
   latitude: number;
@@ -14,11 +14,16 @@ interface MarkerType {
 }
 
 const markerImages: { [key: string]: any } = {
-  "BFP": require('../assets/images/fire.png'),
-  "PNP": require('../assets/images/police.webp'),
-  "Medical": require('../assets/images/medic.png'),
-  "NDRRMC": require('../assets/images/ndrrmc.png'),
-  "PDRRMO": require('../assets/images/ndrrmc.png'),
+  "BFP BRGY. SAN ISIDRO": require('../assets/images/fire.png'),
+  "BFP BRGY. SAN NICOLAS": require('../assets/images/fire.png'),
+  "BFP BRGY. SAN SEBASTIAN": require('../assets/images/fire.png'),
+  "PNP BRGY. SAN ISIDRO": require('../assets/images/police.webp'),
+  "PNP BRGY. MABINI": require('../assets/images/police.webp'),
+  "PNP HILARIO STREET": require('../assets/images/police.webp'),
+  "TARLAC PROVINCIAL HOSPITAL": require('../assets/images/medic.png'),
+  "CENTRAL LUZON DOCTORS HOSPITAL": require('../assets/images/medic.png'),
+  "TALON GENERAL HOSPITAL": require('../assets/images/medic.png'),
+  "PDRRMO Station": require('../assets/images/ndrrmc.png'),
   "BFP Assistance Request": require('../assets/images/fire.png'),
   "PNP Assistance Request": require('../assets/images/police.webp'),
   "Medical Assistance Request": require('../assets/images/medic.png'),
@@ -34,13 +39,16 @@ export default function MainPage() {
   const [markers, setMarkers] = useState<MarkerType[]>([]);
   const [isPressed, setIsPressed] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [currentLocation, setCurrentLocation] = useState({ latitude: 0, longitude: 0 });
+
+  const [triggerNotification, setTriggerNotification] = useState(false);
+
 
   const [serviceProvided, setServiceProvided] = useState<string | null>();
   const [nameInNeed, setNameInNeed] = useState<string | null>();
   const [message, setMessage] = useState<string | null>('');
   const [messageError, setMessageError] = useState<string | null>();
 
-  const { location, errorMsg, isFetching, latitude, longitude, title } = useLocation();
   const { markerUnameEmoji, markerImageSize, imageChanger } = useHandleLogin();
 
   const defaultRegion = {
@@ -50,6 +58,19 @@ export default function MainPage() {
     longitudeDelta: 0.05,
   };
 
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const toRad = (value: number) => (value * Math.PI) / 180;
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in kilometers
+  };
+  
   async function handleSendMessage() {
     try {
       if (!serviceProvided || !nameInNeed || !message) {
@@ -69,67 +90,88 @@ export default function MainPage() {
     }
   }
 
+  const isMarkerType = (obj: any): obj is MarkerType =>
+    obj &&
+    typeof obj.latitude === 'number' &&
+    typeof obj.longitude === 'number' &&
+    typeof obj.title === 'string';
+  
+    
+
     const fetchAndUpdateMarker = async () => {
       try {
-        const username = await AsyncStorage.getItem('usernameSP');
-        const userId = await AsyncStorage.getItem('userId');
-    
-        if (!username || latitude === null || longitude === null) return;
-    
-        const response = await fetch(`https://fearless-growth-production.up.railway.app/marker/getMarker/${username}`);
-        const data = await response.json();
-        if (Array.isArray(data)) setMarkers(data);
-    
-        try {
-          const checkResponse = await axios.get(`https://fearless-growth-production.up.railway.app/marker/checkMarkerTitleExists`, {
-            params: { title: username },
-          });
-    
-          if (checkResponse.status === 200 && checkResponse.data?.data) {
-            await axios.put(`https://fearless-growth-production.up.railway.app/marker/updateMarker/${username}`, {
-              newLatitude: latitude,
-              newLongitude: longitude,
-            });
+          const username = await AsyncStorage.getItem('usernameSP');
+          const response = await fetch(
+              `https://express-production-ac91.up.railway.app/marker/getStation/${username}`
+          );
+  
+          const data = await response.json();
+  
+          const servicetype = await AsyncStorage.getItem('service');
+  
+          if (!servicetype) {
+              throw new Error('Service type not found in AsyncStorage');
           }
-        } catch (error: any) {
-          // Handle 404 error from `checkMarkerTitleExists` here
-          if (axios.isAxiosError(error) && error.response?.status === 404) {
-            await axios.post(`https://fearless-growth-production.up.railway.app/marker/${username}/submitMarkerSP`, {
-              lat: latitude,
-              long: longitude,
-              description: 'test',
-              UserID: userId,
-              title: username
-            });
+  
+          const markerResponse = await axios.get(
+              `https://express-production-ac91.up.railway.app/marker/getMarker/${encodeURIComponent(servicetype)}`
+          );
+          
+
+          if (markerResponse.data) {
+           setTriggerNotification(true);
+           setTimeout(() => setTriggerNotification(false), 2000);
           } else {
-            console.error('Error in checkMarkerTitleExists:', error.message);
+            setTriggerNotification(false);
           }
-        }
+
+  
+          if (Array.isArray(data)) {
+              const updatedMarkers = [...data, ...markerResponse.data];
+  
+              console.log("Updated markers " + updatedMarkers)
+              setMarkers(updatedMarkers);
+  
+              const userMarker = updatedMarkers.find(
+                  (marker: any) => marker.title === username
+              );
+  
+              if (userMarker) {
+                  setCurrentLocation({
+                      latitude: userMarker.latitude,
+                      longitude: userMarker.longitude,
+                  });
+              }
+          }
       } catch (error: any) {
-        console.error('Unexpected error in fetchAndUpdateMarker:', error.message);
+          console.error('Unexpected error in fetchAndUpdateMarker:', error.message);
       }
-    };
+  };
+  
+  
+  
+  
+
+  
+  
     
-    useEffect(() => {
-      // Set an interval to periodically call fetchAndUpdateMarker every 3 seconds
-      const intervalId = setInterval(fetchAndUpdateMarker, 3000);
-      imageChanger()
-      // Clean up interval on component unmount
-      return () => clearInterval(intervalId);
-    }, [latitude, longitude]);
-
-
+    
   useEffect(() => {
-    if (latitude && longitude && title) {
-      setMarkers((prevMarkers) => [
-        ...prevMarkers,
-        { latitude, longitude, title },
-      ]);
-    }
-  }, [latitude, longitude, title]);
+    const intervalId = setInterval(fetchAndUpdateMarker, 3000);
+    imageChanger()
+    return () => clearInterval(intervalId);
+  }, [markers]);
+
+
+  
 
   return (
     <View style={styles.container}>
+      <Notification
+          message={'Someone asked for help!'}
+          trigger={triggerNotification}
+        />
+
       <Modal
         animationType="fade"
         transparent={true}
@@ -157,23 +199,14 @@ export default function MainPage() {
         </View>
       </Modal>
 
-      {!isFetching && location && location.coords && <Text>Fetching location...</Text>}
-      {errorMsg && <Text>{errorMsg}</Text>}
-      {!isFetching && location && (
+      
         <MapView
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={defaultRegion}
-          region={{
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          }}
+          
         >
-          <Marker coordinate={{ latitude: location.coords.latitude, longitude: location.coords.longitude }} title="You are here" description="Your current location">
-            <Image source={markerUnameEmoji} style={{ width: markerImageSize.width, height: markerImageSize.height }} />
-          </Marker>
+          
           {markers.map((marker, index) => (
             marker.latitude && marker.longitude ? (
               <Marker
@@ -187,7 +220,6 @@ export default function MainPage() {
             ) : null
           ))}
         </MapView>
-      )}
 
       <View style={styles.tabBarContainer}>
         <View style={styles.iconContainer}>

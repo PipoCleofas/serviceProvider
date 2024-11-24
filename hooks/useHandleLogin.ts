@@ -1,7 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import axios from "axios";
-import useLocation from './useLocation';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 export default function useHandleLogin(){
@@ -23,52 +22,69 @@ export default function useHandleLogin(){
         setPassword(text)
     }
 
+    function getFirstString(input: string): string {
+      const medicalKeywords = ['DOCTORS', 'HOSPITAL', 'GENERAL', 'PROVINCIAL'];
+      const words = input.split(' ');
+  
+      if (words.some(word => medicalKeywords.includes(word.toUpperCase()))) {
+          return 'Medical';
+      }
+  
+      return words[0];
+  }
+  
+  
     const onLoginPress = async () => {
       try {
           const loginErr = validateLogin(uname, password);
           setLoginError(loginErr);
           console.log('Received username:', uname);
           console.log('Received password:', password);
-            
+          
           if (loginErr) {
               console.log(loginErr);
               return;
           }
-
-          const response = await axios.get('https://fearless-growth-production.up.railway.app/serviceprovider/getServiceProvider', {
-              params: {
-                  username: uname,
-                  password: password,
-              },
-          });
-          
-
+  
+          // First login request
+          const response = await axios.get(
+              'https://express-production-ac91.up.railway.app/serviceprovider/getServiceProvider',
+              {
+                  params: {
+                      username: uname,
+                      password: password,
+                  },
+              }
+          );
+  
           if (response.data.success) {
-            console.log('Login successful');
-            
-            const userId = response.data.userId;
-            if (userId) {  
-                await AsyncStorage.setItem('usernameSP', uname as string);
-                await AsyncStorage.setItem('userId', userId.toString());
-                console.log('Username and User ID stored in AsyncStorage:', uname, userId);
+              console.log('Login successful');
+              const userId = response.data.userId;
+  
+              if (userId) {
+                  const servicetype = getFirstString(uname as string)
+                  const service = AsyncStorage.setItem('service',servicetype); // Extract servicetype (e.g., "PNP")
 
-                await imageChanger();
-
-                
-                navigation.navigate('MainPage' as never);
-            } else {
-                console.error('User ID not found in response');
-                setLoginError('User ID not found in response');
-            }
-        } else {
-            console.log('Login failed:', response.data.message);
-            setLoginError(response.data.message);
-        }
-        
-      } catch (err: any) {
+                  await AsyncStorage.setItem('usernameSP', uname as string);
+                  await AsyncStorage.setItem('userId', userId.toString());
+                  console.log('Username and User ID stored in AsyncStorage:', uname, userId);
+  
+                  await imageChanger();
+  
+                  navigation.navigate('MainPage' as never);
+              } else {
+                  console.error('User ID not found in response');
+                  setLoginError('User ID not found in response');
+              }
+          } else {
+              console.log('Login failed:', response.data.message);
+              setLoginError(response.data.message);
+          }
+      } catch (err) {
           handleAxiosError(err);
       }
   };
+  
 
   
   
@@ -90,19 +106,34 @@ export default function useHandleLogin(){
           const uname = await AsyncStorage.getItem('usernameSP');
           if (uname) {
             switch (uname) {
-              case 'BFP':
+              case 'BFP BRGY. SAN ISIDRO':
                 setMarkerUnameEmoji(require('../assets/images/fire.png'));
                 break;
-              case 'PNP':
+              case 'BFP BRGY. SAN NICOLAS':
+                setMarkerUnameEmoji(require('../assets/images/fire.png'));
+                break;
+              case 'BFP BRGY. SAN SEBASTIAN':
+                setMarkerUnameEmoji(require('../assets/images/fire.png'));
+                break;
+              case 'PNP BRGY. SAN ISIDRO':
                 setMarkerUnameEmoji(require('../assets/images/police.webp'));
                 break;
-              case 'Medical':
+              case 'PNP BRGY MABINI':
+                setMarkerUnameEmoji(require('../assets/images/police.webp'));
+                break;
+              case 'PNP HILARIO STREET':
+              setMarkerUnameEmoji(require('../assets/images/police.webp'));
+              break;
+              case 'TARLAC PROVINCIAL HOSPITAL':
                 setMarkerUnameEmoji(require('../assets/images/medic.png'));
                 break;
-              case 'NDRRMC':
-                setMarkerUnameEmoji(require('../assets/images/ndrrmc.png'));
+              case 'CENTRAL LUZON DOCTORS HOSPITAL':
+                setMarkerUnameEmoji(require('../assets/images/medic.png'));
                 break;
-              case 'PDRRMO':
+              case 'TALON GENERAL HOSPITAL':
+                setMarkerUnameEmoji(require('../assets/images/medic.png'));
+                break;
+              case 'PDRRMO Station':
                 setMarkerUnameEmoji(require('../assets/images/ndrrmc.png'));
                 break;
             }

@@ -17,7 +17,7 @@ export default function Index() {
 
             <View style={styles.inputContainer}>
                 <Text style={styles.labelInput}>USERNAME:</Text>
-                <TextInput style={styles.textInput} maxLength={15} onChangeText={(text) => onUnameChange(text)} />
+                <TextInput style={styles.textInput} maxLength={50} onChangeText={(text) => onUnameChange(text)} />
             </View>
 
             <View style={[styles.inputContainer, { marginBottom: 35 }]}>
