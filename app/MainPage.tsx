@@ -100,53 +100,71 @@ export default function MainPage() {
 
     const fetchAndUpdateMarker = async () => {
       try {
-          const username = await AsyncStorage.getItem('usernameSP');
-          const response = await fetch(
-              `https://express-production-ac91.up.railway.app/marker/getStation/${username}`
+        const username = await AsyncStorage.getItem('usernameSP');
+        const response = await fetch(
+          `https://express-production-ac91.up.railway.app/marker/getStation/${username}`
+        );
+    
+        const data = await response.json();
+    
+        // Get service type from AsyncStorage
+        const servicetype = await AsyncStorage.getItem('service');
+        if (!servicetype) {
+          throw new Error('Service type not found in AsyncStorage');
+        }
+    
+        // Determine which endpoint to call based on username
+        let markerResponse;
+        const specialUsernames = [
+          'TALON GENERAL HOSPITAL',
+          'BFP BRGY. SAN ISIDRO',
+          'PNP BRGY. SAN ISIDRO',
+          'PDRRMO STATION',
+        ];
+    
+        if (specialUsernames.includes(username || '')) {
+          // Call stationRequests endpoint
+          markerResponse = await axios.get(
+            `https://express-production-ac91.up.railway.app/marker/stationRequests/${servicetype}`
           );
-  
-          const data = await response.json();
-  
-          const servicetype = await AsyncStorage.getItem('service');
-  
-          if (!servicetype) {
-              throw new Error('Service type not found in AsyncStorage');
-          }
-  
-          const markerResponse = await axios.get(
-              `https://express-production-ac91.up.railway.app/marker/getMarker/${encodeURIComponent(servicetype)}`
+        } else {
+          // Call getMarker endpoint
+          markerResponse = await axios.get(
+            `https://express-production-ac91.up.railway.app/marker/getMarker/${encodeURIComponent(servicetype)}`
           );
-          
-
-          if (markerResponse.data) {
-           setTriggerNotification(true);
-           setTimeout(() => setTriggerNotification(false), 2000);
-          } else {
-            setTriggerNotification(false);
+        }
+    
+        console.log("Got the markers from: " + servicetype);
+    
+        if (Array.isArray(data)) {
+          const updatedMarkers = [...data, ...markerResponse.data];
+          console.log("Updated markers: ", updatedMarkers);
+          setMarkers(updatedMarkers);
+    
+          const userMarker = updatedMarkers.find(
+            (marker: any) => marker.title === username
+          );
+    
+          if (userMarker) {
+            setCurrentLocation({
+              latitude: userMarker.latitude,
+              longitude: userMarker.longitude,
+            });
           }
-
-  
-          if (Array.isArray(data)) {
-              const updatedMarkers = [...data, ...markerResponse.data];
-  
-              console.log("Updated markers " + updatedMarkers)
-              setMarkers(updatedMarkers);
-  
-              const userMarker = updatedMarkers.find(
-                  (marker: any) => marker.title === username
-              );
-  
-              if (userMarker) {
-                  setCurrentLocation({
-                      latitude: userMarker.latitude,
-                      longitude: userMarker.longitude,
-                  });
-              }
-          }
+    
+          // Check for Assistance Request
+          const hasAssistanceRequest = updatedMarkers.some(marker =>
+            marker.title?.includes('Assistance Request')
+          );
+    
+          // Trigger notification if Assistance Request is found
+          setTriggerNotification(hasAssistanceRequest);
+        }
       } catch (error: any) {
-          console.error('Unexpected error in fetchAndUpdateMarker:', error.message);
+        console.error('Unexpected error in fetchAndUpdateMarker:', error.message);
       }
-  };
+    };
+    
   
   
   

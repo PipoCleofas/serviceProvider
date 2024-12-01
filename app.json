@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app2",
-    "slug": "app2",
+    "name": "providerApp",
+    "slug": "providerApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -18,7 +18,9 @@
         "NSLocationWhenInUseUsageDescription": "We need your location to show it on the map",
         "NSLocationAlwaysUsageDescription": "We need your location to show it on the map",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to show it on the map",
-        "UIBackgroundModes": ["location"]
+        "UIBackgroundModes": [
+          "location"
+        ]
       }
     },
     "android": {
@@ -53,7 +55,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "73415099-f135-4a6e-ab5f-484b420e1e29"
+        "projectId": "ea00a39d-632e-493f-b9b3-8208def85bc5"
       }
     }
   }

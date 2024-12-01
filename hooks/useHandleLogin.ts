@@ -65,6 +65,8 @@ export default function useHandleLogin(){
                   const servicetype = getFirstString(uname as string)
                   const service = AsyncStorage.setItem('service',servicetype); // Extract servicetype (e.g., "PNP")
 
+                  
+
                   await AsyncStorage.setItem('usernameSP', uname as string);
                   await AsyncStorage.setItem('userId', userId.toString());
                   console.log('Username and User ID stored in AsyncStorage:', uname, userId);
